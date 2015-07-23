@@ -3,7 +3,8 @@ import numpy as np
 
 def logHist(X, N=30,fig=None, noclear=False, pdf=False, **kywds):
     '''
-    Plot logarithmic histogram.
+    Plot logarithmic histogram or probability density function from
+    sampled data.
 
     Args:
         X (numpy.ndarray): 1-D array of sampled values
