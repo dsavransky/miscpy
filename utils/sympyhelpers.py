@@ -2,15 +2,18 @@
 sympy helper functions
 '''
 
+import sympy
 from sympy import *
 
 th,ph,psi,thd,phd,psid,thdd,phdd,psidd = symbols('theta,phi,psi,thetadot,phidot,psidot,thetaddot,phiddot,psiddot')
 w1,w2,w3 = symbols('omega_1,omega_2,omega_3')
 t,g,m,h = symbols('t,g,m,h')
+circmat = Matrix([eye(3)[2-j,:] for j in range(3)]) #define circulant matrix
 
-#By Chris Wagner (http://robotfantastic.org/total-derivatives-in-sympy.html):
 def difftotal(expr, diffby, diffmap):
     """Take the total derivative with respect to a variable.
+    Originally by Chris Wagner (http://robotfantastic.org/total-derivatives-in-sympy.html)
+
 
     Example:
 
@@ -80,4 +83,25 @@ def skew(v):
         [v[2],  0,  -v[0]],
         [-v[1],v[0],  0  ]
     ])
+
+def mat2vec(mat,basis='e'):
+    """ Transform matrix representation of a vector to the vector equation
+    for a given basis.
+
+    basis can be either a string (i.e. 'e' becomes basis e_1,e_2,e3) or an
+    iterable of length 3.
+
+    mat is assumed to be sympy matrix representing a column vector
+    """
+
+    assert isinstance(basis,str) or (hasattr(basis,'__iter__') and len(basis)==3),\
+            "basis input must be a string or iterable of length 3."
+
+    if isinstance(basis,str):
+        basis = ['\mathbf{'+basis+'}_'+str(j) for j in range(1,4)]
+
+    basissyms = symbols(basis,commutative=False)
+    basisvec = Matrix(basissyms)
+
+    return (mat.T*basisvec)[0]
 
