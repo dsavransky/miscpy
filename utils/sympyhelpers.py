@@ -9,6 +9,9 @@ th,ph,psi,thd,phd,psid,thdd,phdd,psidd = symbols('theta,phi,psi,thetadot,phidot,
 w1,w2,w3 = symbols('omega_1,omega_2,omega_3')
 t,g,m,h = symbols('t,g,m,h')
 circmat = Matrix([eye(3)[2-j,:] for j in range(3)]) #define circulant matrix
+polarframe = ['\mathbf{e_r}','\mathbf{e_\\theta}','\mathbf{e_z}']
+sphericalframe = ['\mathbf{e_\\phi}','\mathbf{e_\\theta}','\mathbf{e_\\rho}']
+
 
 def difftotal(expr, diffby, diffmap):
     """Take the total derivative with respect to a variable.
@@ -77,12 +80,30 @@ def parallelAxis(I_G,r_QG,m):
 
 def skew(v):
     """Given 3x1 vector v, return skew-symmetric matrix"""
+
+    assert (hasattr(v,'__iter__') and len(v)==3),\
+            "v must be an iterable of length 3."
     
     return Matrix([
         [0,   -v[2], v[1]],
         [v[2],  0,  -v[0]],
         [-v[1],v[0],  0  ]
     ])
+
+def DCM2angVel(dcm,diffmap):
+    """ Given a direction cosine matrix (DCM) transforming from
+    frame A to frame B ({}^B C^A) returns the angular velocity of
+    frame B in frame A ({}^A\omega^B). The returned vector will be 
+    the components in frame B.
+
+    Assumes that differentiation is with respect to symbol t.  
+    diffmap is defined as in difftotal
+    """
+    
+    s = solve(dcm*difftotalmat(dcm,t,diffmap).T-skew([w1,w2,w3]),(w1,w2,w3))
+    return Matrix([s[w1],s[w2],s[w3]])
+
+
 
 def mat2vec(mat,basis='e'):
     """ Transform matrix representation of a vector to the vector equation
