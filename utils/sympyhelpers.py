@@ -100,9 +100,11 @@ def DCM2angVel(dcm,diffmap):
     diffmap is defined as in difftotal
     """
     
-    s = solve(dcm*difftotalmat(dcm,t,diffmap).T-skew([w1,w2,w3]),(w1,w2,w3))
-    return Matrix([s[w1],s[w2],s[w3]])
+    #s = solve(dcm*difftotalmat(dcm,t,diffmap).T-skew([w1,w2,w3]),(w1,w2,w3))
+    #return Matrix([s[w1],s[w2],s[w3]])
 
+    tmp = dcm*difftotalmat(dcm,t,diffmap).T
+    return simplify(Matrix([tmp[2,1],tmp[0,2],tmp[1,0]]))
 
 
 def mat2vec(mat,basis='e'):
@@ -125,4 +127,48 @@ def mat2vec(mat,basis='e'):
     basisvec = Matrix(basissyms)
 
     return (mat.T*basisvec)[0]
+
+def EulerAngSet(rots, angs):
+    """ Calculate the total DCM for an Euler Angle set defined by 
+    ordered rotations about body-fixed axes rots of angles angs.
+    
+    Final DCM is {}^B C^A where the first rotation and angle in rots
+    and angs refer to rotation starting from frame A (and the final
+    entry in rots and angs is rotation into frame B).
+    """
+
+    assert (hasattr(rots,'__iter__') and len(rots)==3),\
+            "rots must be an iterable of length 3."
+
+    assert (hasattr(angs,'__iter__') and len(angs)==3),\
+            "v must be an iterable of length 3."
+
+    DCM = eye(3)
+    for rot,ang in zip(rots,angs):
+        DCM = rotMat(rot,ang)*DCM
+
+    return simplify(DCM)
+
+def EulerLagrange(L, qs, diffmap):
+    """ Apply the Euler-Lagrange equations to Lagrangian L, with
+    generalized coordinates qs, with their derivatives identified by the
+    differentation map diffmap (see difftotal).
+
+    Note that qs must be iterable even if this is only a one dof system.
+
+    diffmap must map all qs to their second derivatives (via the first 
+    derivative).  i.e., for any q = \theta, diffmap must contain \dot\theta
+    and \ddot\theta.
+
+    The returned value will be a system of equations for the second 
+    time derivatives of the generalized coordinates.
+    """
+
+    assert hasattr(qs,'__iter__'),\
+            "qs must be an iterable."
+
+    eqs = [simplify(difftotal(L.diff(diffmap[q]),t,diffmap) - L.diff(q)) \
+            for q in qs]
+
+    return simplify(solve(eqs,[diffmap[diffmap[q]] for q in qs]))
 
