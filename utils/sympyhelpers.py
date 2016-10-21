@@ -57,8 +57,8 @@ def transportEq(vec, diffby, diffmap, omega):
 
 
 def rotMat(axis,angle):
-    """ Returns the DCM for a frame rotation of angle about 
-    the specified axis ({}^B C^A)
+    """ Returns the DCM ({}^B C^A) for a frame rotation of angle about 
+    the specified axis     
     """
     if axis == 1:
         return Matrix(([1,0,0],[0,cos(angle),sin(angle)],[0,-sin(angle),cos(angle)]))
@@ -81,7 +81,7 @@ def parallelAxis(I_G,r_QG,m):
 def skew(v):
     """Given 3x1 vector v, return skew-symmetric matrix"""
 
-    assert (hasattr(v,'__iter__') and len(v)==3),\
+    assert ((hasattr(v,'__iter__') or isinstance(v,Matrix)) and len(v)==3),\
             "v must be an iterable of length 3."
     
     return Matrix([
@@ -89,6 +89,12 @@ def skew(v):
         [v[2],  0,  -v[0]],
         [-v[1],v[0],  0  ]
     ])
+
+def calcDCM(n,th):
+    """Calculated the DCM  ({}^A C^B) for a rotation of angle theta about an
+    axis n"""
+
+    return eye(3)*cos(th)+skew(n)*sin(th)+(1-cos(th))*n*n.T
 
 def DCM2angVel(dcm,diffmap):
     """ Given a direction cosine matrix (DCM) transforming from
@@ -127,6 +133,23 @@ def mat2vec(mat,basis='e'):
     basisvec = Matrix(basissyms)
 
     return (mat.T*basisvec)[0]
+
+def fancyMat(prefix,shape):
+    """ Create an indexed matrix akin to symarray using the prefix
+    and with dimensions given by shape (this must be a 2 element iterable)
+
+    Indexing is 1-based.
+    """
+    
+    M = []
+    for r in range(1,shape[0]+1):
+        row = []
+        for c in range(1,shape[1]+1):
+            row.append(prefix+'_{'+str(r)+str(c)+'}')
+        M.append(row)
+    M = Matrix(symbols(M))
+
+    return M
 
 def EulerAngSet(rots, angs):
     """ Calculate the total DCM for an Euler Angle set defined by 
