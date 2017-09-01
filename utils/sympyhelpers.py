@@ -76,7 +76,7 @@ def parallelAxis(I_G,r_QG,m):
     body is m.  I_G and I_QG are assumed to be with respect to the 
     same body frame."""
     
-    return I_G + m*((r_QG.transpose()*r_QG)[0]*eye(3) + r_QG*r_QG.transpose())
+    return I_G + m*((r_QG.transpose()*r_QG)[0]*eye(3) - r_QG*r_QG.transpose())
 
 def skew(v):
     """Given 3x1 vector v, return skew-symmetric matrix"""
@@ -139,6 +139,9 @@ def fancyMat(prefix,shape):
     and with dimensions given by shape (this must be a 2 element iterable)
 
     Indexing is 1-based.
+
+    Example:
+        fancyMat('{}^\mathcal{B}C^{\mathcal{A}}',(3,3))
     """
     
     M = []
