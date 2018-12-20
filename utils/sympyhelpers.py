@@ -9,8 +9,8 @@ th,ph,psi,thd,phd,psid,thdd,phdd,psidd = symbols('theta,phi,psi,thetadot,phidot,
 w1,w2,w3 = symbols('omega_1,omega_2,omega_3')
 t,g,m,h = symbols('t,g,m,h')
 circmat = Matrix([eye(3)[2-j,:] for j in range(3)]) #define circulant matrix
-polarframe = ['\mathbf{e_r}','\mathbf{e_\\theta}','\mathbf{e_z}']
-sphericalframe = ['\mathbf{e_\\phi}','\mathbf{e_\\theta}','\mathbf{e_\\rho}']
+polarframe = ['\mathbf{e}_r','\mathbf{e}_\\theta','\mathbf{e}_z']
+sphericalframe = ['\mathbf{e}_\\phi','\mathbf{e}_\\theta','\mathbf{e}_\\rho']
 
 
 def difftotal(expr, diffby, diffmap):
@@ -91,7 +91,7 @@ def skew(v):
     ])
 
 def calcDCM(n,th):
-    """Calculated the DCM  ({}^A C^B) for a rotation of angle theta about an
+    """Calculates the DCM  ({}^A C^B) for a rotation of angle th about an
     axis n"""
 
     return eye(3)*cos(th)+skew(n)*sin(th)+(1-cos(th))*n*n.T
@@ -117,10 +117,10 @@ def mat2vec(mat,basis='e'):
     """ Transform matrix representation of a vector to the vector equation
     for a given basis.
 
-    basis can be either a string (i.e. 'e' becomes basis e_1,e_2,e3) or an
+    basis can be either a string (i.e. 'e' becomes basis e_1,e_2,e_3) or an
     iterable of length 3.
 
-    mat is assumed to be sympy matrix representing a column vector
+    mat is assumed to be a sympy matrix representing a column vector
     """
 
     assert isinstance(basis,str) or (hasattr(basis,'__iter__') and len(basis)==3),\
