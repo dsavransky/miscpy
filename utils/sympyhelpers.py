@@ -5,9 +5,9 @@ sympy helper functions
 import sympy
 from sympy import *
 
-th,ph,psi,thd,phd,psid,thdd,phdd,psidd = symbols('theta,phi,psi,thetadot,phidot,psidot,thetaddot,phiddot,psiddot')
-w1,w2,w3 = symbols('omega_1,omega_2,omega_3')
-t,g,m,h = symbols('t,g,m,h')
+th,ph,psi,thd,phd,psid,thdd,phdd,psidd = symbols('theta,phi,psi,thetadot,phidot,psidot,thetaddot,phiddot,psiddot',real=True)
+w1,w2,w3 = symbols('omega_1,omega_2,omega_3',real=True)
+t,g,m,h = symbols('t,g,m,h',real=True)
 circmat = Matrix([eye(3)[2-j,:] for j in range(3)]) #define circulant matrix
 polarframe = ['\mathbf{e}_r','\mathbf{e}_\\theta','\mathbf{e}_z']
 sphericalframe = ['\mathbf{e}_\\phi','\mathbf{e}_\\theta','\mathbf{e}_\\rho']
@@ -81,7 +81,7 @@ def parallelAxis(I_G,r_QG,m):
 def skew(v):
     """Given 3x1 vector v, return skew-symmetric matrix"""
 
-    assert ((hasattr(v,'__iter__') or isinstance(v,Matrix)) and len(v)==3),\
+    assert ((hasattr(v,'__iter__') or isinstance(v,Matrix) or isinstance(v,MatrixBase)) and len(v)==3),\
             "v must be an iterable of length 3."
     
     return Matrix([
