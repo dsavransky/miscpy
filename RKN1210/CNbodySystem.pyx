@@ -7,6 +7,21 @@ cdef extern from "nbodyC.h":
     int nbodyC(double* dx, double* x, double* mus, int n )
 
 cdef class NbodySystem:
+    """CNbodySystem
+    
+    This class generates an object for calculating the mutual accelerations due to
+    Newtonian gravity in an N-body system.  The object provides two methods for 
+    performing the calculation: one (nbody_eq) based on a standard looping algorithm, 
+    and a second (nobdy_eq_vec), vectorized variant. Identical to NbodySystem but 
+    Cythonized wrapper around pure C implementation.
+
+    Args:         
+        mus (iterable):
+            user specified values for the gravitational parameter of each body
+
+    
+    """
+
     cdef np.ndarray mus
     cdef int n
 

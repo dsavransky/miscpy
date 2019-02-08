@@ -2,6 +2,21 @@
 #include <string.h>
 #include "nbodyC.h"
 
+/*N-body equations.
+Calculate the mutual accelerations of a collection of N bodies defined by 
+gravitational parameters (G*M) stored in self.mu
+
+Args:
+    dx (double array):
+        Return values (x'')
+    x (double array)
+        State value (body positions 3nx1)
+    mus (double array)
+        Gravitational parameters (nx1)
+    n (scalar)
+        Number of bodies
+*/
+
 int nbodyC(double dx[],double x[],double mus[],int n)
 {    
     double temp[3] = { 0.0 };

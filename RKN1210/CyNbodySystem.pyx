@@ -13,6 +13,21 @@ cimport cython
 @cython.wraparound(False)
 
 cdef class NbodySystem:
+    """CyNbodySystem
+    
+    This class generates an object for calculating the mutual accelerations due to
+    Newtonian gravity in an N-body system.  The object provides two methods for 
+    performing the calculation: one (nbody_eq) based on a standard looping algorithm, 
+    and a second (nobdy_eq_vec), vectorized variant. Identical to NbodySystem but 
+    Cythonized.
+
+    Args:         
+        mus (iterable):
+            user specified values for the gravitational parameter of each body
+
+    
+    """
+
     cdef np.ndarray mus
     cdef int n
 
@@ -44,5 +59,27 @@ cdef class NbodySystem:
         return dx
 
     def nbody_eq(self, DTYPE_t t, np.ndarray[DTYPE_t, ndim=1] x):
+        '''
+        N-body equations.
+
+        Calculate the mutual accelerations of a collection of N bodies defined by 
+        gravitational parameters (G*M) stored in self.mu
+    
+        Args:
+            t (scalar):
+                time - dummy var required by many integrators. Not used in calculation.
+            x (ndarray):
+                3n x 1 vector of stacked positions or n planets where n = self.n.  
+            
+        Return:
+            ddx (ndarray):
+                Second derivative of input.
+
+        Notes:
+            Position units must be complementary (i.e., if position is AU mu must be in 
+            AU^3/TU^2).
+
+        '''
+
         return self._nbody_eq(t, x)
     

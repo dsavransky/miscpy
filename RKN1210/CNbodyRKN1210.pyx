@@ -13,7 +13,45 @@ cimport cython
     
 def nbodyRKN1210(tspan0, np.ndarray[DTYPE_t, ndim=1] y0,
                  np.ndarray[DTYPE_t, ndim=1] dy0, np.ndarray[DTYPE_t, ndim=1] mus):
+    """nbodyRKN1210
+    
+    12th/10th order Runge—Kutta—Nyström method for the numerical integration of
+    Newtonian N-body gravitational system.
+
+    Args:         
+        tspan0 (scalar or array):
+            Times to find solutions at.  If scalar, assumes integration
+            is between 0 and tspan.
+        y0 (array)L
+            Initial state.
+        dy0 (array):
+            Initial state derivative (y').  Must be of same dimension as y0
+        mus (array):
+            Gravitational parameters 
+    
+    Returns:
+        thist (array):
+            Times corresponding to solutions entries
+        yhist (2d array):
+            Integrator states at each time
+        dyhist (2d array):
+            Integrator state dervatives at each time
+
+    Notes:
+        The construction of RKN12(10) is described in:
+        High-Order Embedded Runge-Kutta-Nystrom Formulae
+        J. R. DORMAND, M. E. A. EL-MIKKAWY, AND P. J. PRINCE
+        IMA Journal of Numerical Analysis (1987) 7, 423-430
         
+        Coefficients obtained from http://www.tampa.phys.ucl.ac.uk/rmat/test/rknint.f
+
+        This code largely based on MATLAB implementation by Rody P.S. Oldenhuis, as
+        found on Mathworks File Exchange.
+
+        Purely a cythonized wrapper of the underlying nbodyRKN1210_c.c code.
+
+    """
+ 
     #format time input
     cdef np.ndarray[DTYPE_t, ndim = 1] tspan
     if isinstance(tspan0, (list,np.ndarray)):

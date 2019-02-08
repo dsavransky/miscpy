@@ -1,9 +1,59 @@
-from scipy import zeros, array, ndarray, shape, size, hstack, squeeze, median, dot, isnan, isinf
 import sys
+import numpy as np
+cimport numpy as np
+DTYPE = np.double
+ctypedef np.double_t DTYPE_t
+cimport cython
+@cython.boundscheck(False)
+@cython.wraparound(False)
 
-def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
+def RKN1210(fun, tspan0, np.ndarray[DTYPE_t, ndim=1] y0, np.ndarray[DTYPE_t, ndim=1] dy0, double abstol=1e-14):
+    """RKN1210
     
-    c = array([0.0e0,
+    12th/10th order Runge—Kutta—Nyström method for the numerical integration of
+    second-order differential equations of the form u''(t) = f(t, u)
+
+    Args:         
+        fun (callable):
+            Function to be integrated.  Must take inputs t,y for 
+            scalar time t and state vector y and return y''.
+        tspan (scalar or array):
+            Times to find solutions at.  If scalar, assumes integration
+            is between 0 and tspan.
+        y0 (array)L
+            Initial state.
+        dy0 (array):
+            Initial state derivative (y').  Must be of same dimension as y0
+        abstol (scalar float):
+            Optional absolute tolerance for integration convergence.  Defaults
+            to 1e-14.  This controls the adaptive step-size of the internal 
+            time step used.
+    
+    Returns:
+        thist (array):
+            Times corresponding to solutions entries
+        yhist (2d array):
+            Integrator states at each time
+        dyhist (2d array):
+            Integrator state dervatives at each time
+
+    Notes:
+        The construction of RKN12(10) is described in:
+        High-Order Embedded Runge-Kutta-Nystrom Formulae
+        J. R. DORMAND, M. E. A. EL-MIKKAWY, AND P. J. PRINCE
+        IMA Journal of Numerical Analysis (1987) 7, 423-430
+        
+        Coefficients obtained from http://www.tampa.phys.ucl.ac.uk/rmat/test/rknint.f
+
+        This code largely based on MATLAB implementation by Rody P.S. Oldenhuis, as
+        found on Mathworks File Exchange.
+
+        Equivalent to RKN1210 but fully cythonized!
+    
+    """
+
+    
+    cdef np.ndarray[DTYPE_t, ndim=1] c = np.array([0.0e0,
         2.0e-2,
         4.0e-2,
         1.0e-1,
@@ -19,58 +69,58 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
         8.57142857142857142857142857143e-1,
         9.45216222272014340129957427739e-1,
         1.0e0,
-        1.0e0])
+        1.0e0],dtype=DTYPE)
 
     '''
     matrix A is lower triangular. It's easiest to 
     load the coefficients row-by-row:
     '''   
-    A = zeros((17,17));
-    A[1,0] = 2.0e-4;  
+    cdef np.ndarray[DTYPE_t, ndim=2] A = np.zeros((17,17), dtype=DTYPE)
+    A[1,0] = 2.0e-4  
 
-    A[2,0:2] = array([2.66666666666666666666666666667e-4,   
-                5.33333333333333333333333333333e-4]);    
+    A[2,0:2] = np.array([2.66666666666666666666666666667e-4,   
+                5.33333333333333333333333333333e-4],dtype=DTYPE)
             
-    A[3,0:3] = array([2.91666666666666666666666666667e-3,
+    A[3,0:3] = np.array([2.91666666666666666666666666667e-3,
                 -4.16666666666666666666666666667e-3,
-                6.25e-3]);    
+                6.25e-3],dtype=DTYPE)    
             
-    A[4,0:4] = array([1.64609053497942386831275720165e-3,
+    A[4,0:4] = np.array([1.64609053497942386831275720165e-3,
                 0.0e0,
                 5.48696844993141289437585733882e-3,
-                1.75582990397805212620027434842e-3]);    
+                1.75582990397805212620027434842e-3],dtype=DTYPE)   
             
-    A[5,0:5] = array([1.9456e-3,
+    A[5,0:5] = np.array([1.9456e-3,
                 0.0e0,
                 7.15174603174603174603174603175e-3,
                 2.91271111111111111111111111111e-3,
-                7.89942857142857142857142857143e-4]);    
+                7.89942857142857142857142857143e-4],dtype=DTYPE)    
             
-    A[6,0:6] = array([5.6640625e-4,
+    A[6,0:6] = np.array([5.6640625e-4,
                 0.0e0,
                 8.80973048941798941798941798942e-4,
                 -4.36921296296296296296296296296e-4,
                 3.39006696428571428571428571429e-4,
-                -9.94646990740740740740740740741e-5]);    
+                -9.94646990740740740740740740741e-5],dtype=DTYPE)    
             
-    A[7,0:7] = array([3.08333333333333333333333333333e-3,
+    A[7,0:7] = np.array([3.08333333333333333333333333333e-3,
                 0.0e0,
                 0.0e0,
                 1.77777777777777777777777777778e-3,
                 2.7e-3,
                 1.57828282828282828282828282828e-3,
-                1.08606060606060606060606060606e-2]);    
+                1.08606060606060606060606060606e-2],dtype=DTYPE)    
             
-    A[8,0:8] = array([3.65183937480112971375119150338e-3,
+    A[8,0:8] = np.array([3.65183937480112971375119150338e-3,
                 0.0e0,
                 3.96517171407234306617557289807e-3,
                 3.19725826293062822350093426091e-3,
                 8.22146730685543536968701883401e-3,
                 -1.31309269595723798362013884863e-3,
                 9.77158696806486781562609494147e-3,
-                3.75576906923283379487932641079e-3]);
+                3.75576906923283379487932641079e-3],dtype=DTYPE)
 
-    A[9,0:9] = array([3.70724106871850081019565530521e-3,
+    A[9,0:9] = np.array([3.70724106871850081019565530521e-3,
                 0.0e0,
                 5.08204585455528598076108163479e-3,
                 1.17470800217541204473569104943e-3,
@@ -78,9 +128,9 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
                 6.01046369810788081222573525136e-2,
                 2.01057347685061881846748708777e-2,
                 -2.83507501229335808430366774368e-2,
-                1.48795689185819327555905582479e-2]);
+                1.48795689185819327555905582479e-2],dtype=DTYPE)
 
-    A[10,0:10] = array([3.51253765607334415311308293052e-2,
+    A[10,0:10] = np.array([3.51253765607334415311308293052e-2,
                 0.0e0,
                 -8.61574919513847910340576078545e-3,
                 -5.79144805100791652167632252471e-3,
@@ -89,9 +139,9 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
                 -1.09307011074752217583892572001e-1,
                 2.3496383118995166394320161088e0,
                 -7.56009408687022978027190729778e-1,
-                1.09528972221569264246502018618e-1]);
+                1.09528972221569264246502018618e-1],dtype=DTYPE)
 
-    A[11,0:11] = array([2.05277925374824966509720571672e-2,
+    A[11,0:11] = np.array([2.05277925374824966509720571672e-2,
                 0.0e0,
                 -7.28644676448017991778247943149e-3,
                 -2.11535560796184024069259562549e-3,
@@ -101,9 +151,9 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
                 1.20653643262078715447708832536e0,
                 -4.13714477001066141324662463645e-1,
                 9.07987398280965375956795739516e-2,
-                5.35555260053398504916870658215e-3]);
+                5.35555260053398504916870658215e-3],dtype=DTYPE)
 
-    A[12,0:12] = array([-1.43240788755455150458921091632e-1,
+    A[12,0:12] = np.array([-1.43240788755455150458921091632e-1,
                 0.0e0,
                 1.25287037730918172778464480231e-2,
                 6.82601916396982712868112411737e-3,
@@ -114,9 +164,9 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
                 -1.96059260511173843289133255423e0,
                 9.18560905663526240976234285341e-1,
                 -2.38800855052844310534827013402e-1,
-                1.59110813572342155138740170963e-1]);
+                1.59110813572342155138740170963e-1],dtype=DTYPE)
 
-    A[13,0:13] = array([8.04501920552048948697230778134e-1,
+    A[13,0:13] = np.array([8.04501920552048948697230778134e-1,
                 0.0e0,
                 -1.66585270670112451778516268261e-2,
                 -2.1415834042629734811731437191e-2,
@@ -128,9 +178,9 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
                 -5.43771923982399464535413738556e0,
                 1.38786716183646557551256778839e0,
                 -5.92582773265281165347677029181e-1,
-                2.96038731712973527961592794552e-2]);
+                2.96038731712973527961592794552e-2],dtype=DTYPE)
 
-    A[14,0:14] = array([-9.13296766697358082096250482648e-1,
+    A[14,0:14] = np.array([-9.13296766697358082096250482648e-1,
                 0.0e0,
                 2.41127257578051783924489946102e-3,
                 1.76581226938617419820698839226e-2,
@@ -143,9 +193,9 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
                 -1.8913028948478674610382580129e0,
                 1.00148450702247178036685959248e0,
                 4.64119959910905190510518247052e-3,
-                1.12187550221489570339750499063e-2]);
+                1.12187550221489570339750499063e-2],dtype=DTYPE)
 
-    A[15,0:15] = array([-2.75196297205593938206065227039e-1,
+    A[15,0:15] = np.array([-2.75196297205593938206065227039e-1,
                 0.0e0,
                 3.66118887791549201342293285553e-2,
                 9.7895196882315626246509967162e-3,
@@ -159,9 +209,9 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
                 1.15920852890614912078083198373e0,
                 -1.72902531653839221518003422953e-2,
                 1.93259779044607666727649875324e-2,
-                5.20444293755499311184926401526e-3]);
+                5.20444293755499311184926401526e-3],dtype=DTYPE)
 
-    A[16,0:16] = array([1.30763918474040575879994562983e0,
+    A[16,0:16] = np.array([1.30763918474040575879994562983e0,
                 0.0e0,
                 1.73641091897458418670879991296e-2,
                 -1.8544456454265795024362115588e-2,
@@ -176,12 +226,12 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
                 7.17732095086725945198184857508e-2,
                 2.16221097080827826905505320027e-3,
                 7.00959575960251423699282781988e-3,
-                0.0e0]);   
+                0.0e0],dtype=DTYPE)  
       
     A = A.T           
 
     #Bhat (high-order b)
-    Bhat = array([1.21278685171854149768890395495e-2,
+    cdef np.ndarray[DTYPE_t, ndim=1] Bhat = np.array([1.21278685171854149768890395495e-2,
             0.0e0,
             0.0e0,
             0.0e0,
@@ -197,10 +247,10 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
             1.16340688043242296440927709215e-2,
             4.65802970402487868693615238455e-3,
             0.0e0,
-            0.0e0]);
+            0.0e0], dtype=DTYPE)
 
     #BprimeHat (high-order b-prime)
-    Bphat  = array([1.21278685171854149768890395495e-2,
+    cdef np.ndarray[DTYPE_t, ndim=1] Bphat = np.array([1.21278685171854149768890395495e-2,
             0.0e0,
             0.0e0,
             0.0e0,
@@ -216,10 +266,10 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
             8.14384816302696075086493964505e-2,
             8.50257119389081128008018326881e-2,
             -9.15518963007796287314100251351e-3,
-            2.5e-2]);
+            2.5e-2], dtype=DTYPE)
 
     #B (low-order b)
-    B = array([1.70087019070069917527544646189e-2,
+    cdef np.ndarray[DTYPE_t, ndim=1] B = np.array([1.70087019070069917527544646189e-2,
             0.0e0,
             0.0e0,
             0.0e0,
@@ -235,10 +285,10 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
             1.63056656059179238935180933102e-2,
             3.79998835669659456166597387323e-3,
             0.0e0,
-            0.0e0]);
+            0.0e0], dtype=DTYPE)
 
     #Bprime (low-order bprime)
-    Bp = array([1.70087019070069917527544646189e-2,
+    cdef np.ndarray[DTYPE_t, ndim=1] Bp = np.array([1.70087019070069917527544646189e-2,
             0.0e0,
             0.0e0,
             0.0e0,
@@ -254,65 +304,79 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
             1.14139659241425467254626653171e-1,
             6.93633866500486770090602920091e-2,
             2.0e-2,
-            0.0e0]);
+            0.0e0], dtype=DTYPE)
 
     #format time input
-    if isinstance(tspan, (list,ndarray)):
-        tspan = array(tspan)
+    cdef np.ndarray[DTYPE_t, ndim = 1] tspan
+    if isinstance(tspan0, (list,np.ndarray)):
+        tspan = np.array(tspan0,dtype=DTYPE)
         userTime = True
-    elif isinstance(tspan, (int,long,float)):
-        tspan = array([0.0,tspan])
+    elif isinstance(tspan0, (int,long,float)):
+        tspan = np.array([0.0,tspan0],dtype=DTYPE)
         userTime = False
     else:
         raise Exception("tspan must be scallar or array.")
 
-    t0,tf = tspan[0],tspan[-1]
-    tdir = (tf - t0)/abs(tf - t0)
+    cdef double t0 = tspan[0]
+    cdef double tf = tspan[tspan.size-1]
+    cdef double tdir = (tf - t0)/abs(tf - t0)
     if t0 == tf:
         raise Exception("t0 cannot equal tf.")
-    if any((tspan[1:] - tspan[:-1])*tdir <= 0):
+    if any((tspan[1:] - tspan[:tspan.size-1])*tdir <= 0):
         raise Exception("tspan must be monotonically increasing or decreasing.")
 
     #validate other inputs
-    y = squeeze(y0)
-    dy = squeeze(dy0)
-    if (len(y.shape) > 1) or (len(dy.shape) > 1) or (y.size != dy.size):
-        raise Exception("y0 and dy0 must be n x 1 (or 1 x n) vectors of the same dimension.")
-    
+    if (y0.size != dy0.size):
+        raise Exception("y0 and dy0 must be n x 1 (or 1 x n) vectors of the same dimension.")   
+    assert y0.dtype == DTYPE and dy0.dtype == DTYPE
+        
     #initialize
-    pow = 1./12
-    t = t0
-    f = zeros((y.size,17))
-    hmin = abs(tf - t0)/1e12
-    hmax = tf - t0
+    cdef np.ndarray[DTYPE_t, ndim=1] y = y0
+    cdef np.ndarray[DTYPE_t, ndim=1] dy = dy0
+    cdef double pow = 1./12
+    cdef double t = t0
+    cdef np.ndarray[DTYPE_t, ndim=2] f = np.zeros((y.size,17), dtype=DTYPE)
+    cdef double hmin = abs(tf - t0)/1e12
+    cdef double hmax = tf - t0
     try:
         f[:,0] = fun(t,y)
     except:
         e = sys.exc_info()[1]
-        print("Error %s" % e)
+        print "Error %s" % e
 
     #default initial step
-    h = (abstol ** pow) / max(max(abs(hstack((dy, f[:, 0])))), 1e-4);
-    h = min(hmax,max(h,hmin));
+    cdef double h = (abstol ** pow) / max(max(abs(np.hstack((dy, f[:, 0])))), 1e-4)
+    h = min(hmax,max(h,hmin))
     h = tdir*h
+    cdef double h0
 
     #pre-allocate output arrays
+    cdef np.ndarray[DTYPE_t, ndim=1] thist
+    cdef np.ndarray[DTYPE_t, ndim=2] yhist, dyhist
+    cdef int histSize
     if userTime:
-        thist = zeros(tspan.size)
-        yhist = zeros((y.size,tspan.size))
-        dyhist = zeros((dy.size,tspan.size))
+        thist = np.zeros(tspan.size, dtype=DTYPE)
+        yhist = np.zeros((y.size,tspan.size), dtype=DTYPE)
+        dyhist = np.zeros((dy.size,tspan.size), dtype=DTYPE)
     else:
         histSize = max(round(abs(tf/h)),2)
-        thist = zeros(histSize)
-        yhist = zeros((y.size,histSize))
-        dyhist = zeros((y.size,histSize))
+        thist = np.zeros(histSize, dtype=DTYPE)
+        yhist = np.zeros((y.size,histSize), dtype=DTYPE)
+        dyhist = np.zeros((y.size,histSize), dtype=DTYPE)
 
     #write ICs to history
     thist[0] = t0
     yhist[:,0] = y
     dyhist[:,0] = dy
 
-    counter = 1
+    #pre-allocate things used in loop
+    cdef int counter = 1
+    cdef double tmp, delta
+    cdef np.ndarray[DTYPE_t, ndim=1] fBphat = np.zeros(y.size , dtype=DTYPE)
+    cdef np.ndarray[DTYPE_t, ndim=1] fBhat = np.zeros(y.size , dtype=DTYPE)
+    cdef np.ndarray[DTYPE_t, ndim=1] fB = np.zeros(y.size , dtype=DTYPE)
+    cdef np.ndarray[DTYPE_t, ndim=1] fBp = np.zeros(y.size , dtype=DTYPE)
+    
     #enter main loop
     while (abs(t - tf) > 0):
         h0 = h
@@ -321,34 +385,39 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
             addToHist = True
             #expand arrays as necessary
             if counter == thist.size:
-                tmp = round(abs((tf-t)/median(thist[1:] - thist[:-1])))
-                yhist = hstack((yhist,zeros((y.size,tmp))))
-                dyhist = hstack((dyhist,zeros((dy.size,tmp))))
-                thist = hstack((thist,zeros(tmp)))
+                tmp = round(abs((tf-t)/np.median(thist[1:] - thist[:thist.size-1])))
+                yhist = np.hstack((yhist,np.zeros((y.size,tmp), dtype=DTYPE)))
+                dyhist = np.hstack((dyhist,np.zeros((dy.size,tmp), dtype=DTYPE)))
+                thist = np.hstack((thist,np.zeros(tmp, dtype=DTYPE)))
 
             #if going past final time, fix time step
             if (tdir*(t + h - tf) > 0): h = tf - t
             
         else:
             addToHist = False
-            #if this step is within hmin of next user time index, change it and add to hist
+            #if this step goes past a usertime decrease it and add to hist
             if (tdir*(t + h - tspan[counter]) >= -hmin):
                 addToHist = True
                 h = tspan[counter] - t
-        
+
         #compute 2nd derivative
         for j in range(17):
-            f[:,j] = fun( t + c[j]*h, y + c[j]*h*dy + (h ** 2.)*dot(f,A[:,j]) )
+            f[:,j] = fun( t + c[j]*h, y + c[j]*h*dy + (h ** 2.)*np.dot(f,A[:,j]) )
 
-        if isnan(f).any() or isinf(f).any():
+        if np.isnan(f).any() or np.isinf(f).any():
             raise Warning("Second derivative computed with infinite or NaN values")
-            return thist[:counter],yhist[:,:counter],dyhist[:,:counter]
+            #return thist[:counter],yhist[:,:counter],dyhist[:,:counter]
 
         #estimate the error
-        fBphat = dot(f,Bphat)
-        fBhat  = dot(f,Bhat)
-        fB = dot(f,B)
-        fBp = dot(f,Bp)
+        #fBphat = np.dot(f,Bphat)
+        #fBhat  = np.dot(f,Bhat)
+        #fB = np.dot(f,B)
+        #fBp = np.dot(f,Bp)
+        
+        dotAb(f,Bphat,fBphat)
+        dotAb(f,Bhat,fBhat)
+        dotAb(f,B,fB)
+        dotAb(f,Bp,fBp)
         delta = max( max(abs( (h ** 2.)*(fBhat - fB))), max(abs(h*(fBphat - fBp))) ) * h
 
         #if error is ok, update the solution & write to history if needed
@@ -368,8 +437,19 @@ def rkn1210(fun,tspan,y0,dy0,abstol=1e-14):
             h = tdir * min(hmax, 0.9*abs(h0)*((abstol/delta) ** pow))
             if (abs(h) < hmin):
                 raise Warning("Step size below minimum at time "+repr(t)+". Singularity likely.")
-                return thist[:counter],yhist[:,:counter],dyhist[:,:counter]
+                #return thist[:counter],yhist[:,:counter],dyhist[:,:counter]
 
     #finished loop so return
     return thist[:counter],yhist[:,:counter],dyhist[:,:counter]
         
+
+def dotAb(np.ndarray[DTYPE_t, ndim=2] A, np.ndarray[DTYPE_t, ndim=1] b, np.ndarray[DTYPE_t, ndim=1] out = None):
+
+    cdef Py_ssize_t i, j, k
+    cdef DTYPE_t s
+    #out = np.zeros(A.shape[0], dtype=DTYPE)
+    for i in range(A.shape[0]):
+        s = 0
+        for k in range(A.shape[1]):
+            s +=A[i,k]*b[k]
+        out[i] = s
