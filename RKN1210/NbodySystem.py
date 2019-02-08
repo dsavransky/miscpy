@@ -59,7 +59,7 @@ class NbodySystem:
         return sum(np.reshape(rkj[:,self.inds2].T,(n-1,3*n)),0)
         
 
-    def nbody_eq2(self, t, x):
+    def nbody_eq(self, t, x):
         '''
         N-body equations.
 
