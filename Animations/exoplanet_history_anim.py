@@ -1,38 +1,55 @@
-#get data from: http://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=planets
-#download table -> votable format, all rows, all columns
-
-#note that current month is hard-coded in line 129 - change as needed. 
-
+import requests
+import pandas
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+import __main__ as main
+if hasattr(main, '__file__'):
+    matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import animation
-from matplotlib.mlab import find
-import mpl_toolkits.axes_grid.axes_size as Size
-from mpl_toolkits.axes_grid import Divider
+import mpl_toolkits.axes_grid1.axes_size as Size
+from mpl_toolkits.axes_grid1 import Divider
 from mpl_toolkits.basemap import Basemap
 import time
-from astropy.io.votable import parse
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import BytesIO as StringIO
+import glob
 
-votable = parse('planets.votable')
-table = votable.get_first_table()
-data = table.array
+#from astropy.io.votable import parse
+#votable = parse('planets.votable')
+#table = votable.get_first_table()
+#data = table.array
+
+
+files = glob.glob('data*.pkl')
+if files:
+    files = np.sort(np.array(files))[-1]
+    data = pandas.read_pickle(files)
+    print("Loaded data from %s"%files)
+else:
+    query = """https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=*&format=csv"""
+    r = requests.get(query)
+    data = pandas.read_csv(StringIO(r.content))
+    data.to_pickle('data'+time.strftime('%Y%m%d')+'.pkl')
+
 
 #sort by discovery year
-data = data[np.argsort(data['pl_disc'])]
+data = data.sort_values(by=['pl_disc']).reset_index(drop=True)
 
 #rename methods with fewer than 30 detections
-mthds = np.unique(data['pl_discmethod']).data
+mthds = np.unique(data['pl_discmethod'])
 for m in mthds:
-    n = find(data['pl_discmethod'] == m)
-    if len(n) < 30:
-        data['pl_discmethod'][n] = 'Other'
+    n = data['pl_discmethod'] == m
+    if len(np.where(n)[0]) < 30:
+        data.loc[n,'pl_discmethod']  = 'Other'
 
-ra = data['ra'].data
-dec = data['dec'].data
-mthds = np.unique(data['pl_discmethod']).data
-mthds = mthds[[3,4,0,1,2]]
+ra = data['ra'].values
+dec = data['dec'].values
+mthds = np.unique(data['pl_discmethod'])
+#want the order to be: RV, Transit, Imag, mulens, other
+mthds = np.roll(mthds,2) 
 
 syms = 'o^Dsv';
 cmap = [[1.0000,         0,         0],
@@ -45,7 +62,7 @@ cmap = [[1.0000,         0,         0],
 
 
 def setup_fig(syms,cmap):
-#setup axes
+    #setup axes
     fignum = 1313
     xsz = 10; ysz = 6; ssz = 0.25
     fontsize = 16
@@ -57,14 +74,14 @@ def setup_fig(syms,cmap):
     main_ax = fig.add_axes(rect,label="main")
     lg_ax = fig.add_axes(rect,label="legend")
 
-#calculate dimentions for all axes
+    #calculate dimentions for all axes
     shm = Size.Fixed(ssz)
     ys = np.array((0.15,0.85))*(ysz - ssz*3)
     horiz = [shm, Size.Scaled(xsz - ssz*2), shm,]
     vert = [shm, Size.Fixed(ys[0]), shm, Size.Scaled(ys[1]), shm]
     divider = Divider(fig, rect, horiz, vert, aspect=False)
 
-#distribute axes
+    #distribute axes
     main_ax.set_axes_locator(divider.new_locator(nx=1, ny=3))
     lg_ax.set_axes_locator(divider.new_locator(nx=1, ny=1))
 
@@ -75,7 +92,7 @@ def setup_fig(syms,cmap):
     meridians = np.arange(-150,151,30)
     mp.drawmeridians(meridians)
     vnudge=1; hnudge = 0
-# Run through (lon, lat) pairs, with lat=0 in each pair.
+    # Run through (lon, lat) pairs, with lat=0 in each pair.
     lons = meridians.copy()
     lats = len(lons)*[0.]
     for lon,lat in zip(lons, lats):
@@ -86,7 +103,7 @@ def setup_fig(syms,cmap):
                  horizontalalignment='center')
 
 
-#set up legend
+    #set up legend
     lg_ax.get_xaxis().set_visible(False)
     lg_ax.get_yaxis().set_visible(False)
     lg_ax.axis((0,1,0,1))
@@ -101,7 +118,7 @@ def setup_fig(syms,cmap):
                       horizontalalignment='left',verticalalignment='center')
 
            
-#and create the year/numstars text
+    #and create the year/numstars text
     yrtxt = main_ax.text(0,0,'1900',fontsize=fontsize,
                       horizontalalignment='left',verticalalignment='bottom')
     nstartxt = main_ax.text(main_ax.get_xlim()[1],0,'0',fontsize=fontsize,
@@ -112,61 +129,62 @@ def setup_fig(syms,cmap):
 
 fig,mp,yrtxt,nstartxt = setup_fig(syms,cmap)
 
-
-
 runtime = 30 #sec
 fps = 30
 nframes = runtime*fps
 
 #generate discovery date array
-[years,inds] = np.unique(data['pl_disc'],return_index=True)
+[years,inds] = np.unique(data['pl_disc'].values,return_index=True)
 disc_dates = np.zeros(len(dec))
 for j in np.arange(0,len(inds)-1):
     n = inds[j+1] - inds[j]
     disc_dates[inds[j]:inds[j+1]] = years[j] + np.linspace(0,1-1./n,n)
 
 #and up to today
-currmonth = 2.56 
-disc_dates[inds[j+1]:] = years[j+1] + np.arange(0,currmonth/12.,(currmonth/12.)/disc_dates[inds[j+1]:].size)
+currtoy = float(time.strftime('%j'))/365.25
+disc_dates[inds[j+1]:] = years[j+1] + np.arange(0,currtoy,currtoy/disc_dates[inds[j+1]:].size)
 
 #generate all sizes
-starnames = np.unique(data['pl_hostname']).data
+hostnames = data['pl_hostname'].values
+starnames = np.unique(hostnames)
 ssizes = np.zeros(len(starnames))+50.
 msizes = np.zeros(len(dec))
 for j in range(len(msizes)):
-    ii = find(starnames == data['pl_hostname'][j])
+    ii = np.where(starnames == hostnames[j])[0]
     msizes[j] = ssizes[ii]
     ssizes[ii] *= 2
 
 xs,ys = mp(ra,dec)
 cmap = np.array(cmap)
-mthdind = np.array([np.where(mthds == m)[0][0] for m in data['pl_discmethod']])
+mthdind = np.array([np.where(mthds == m)[0][0] for m in data['pl_discmethod'].values])
 syms = np.array(list(syms))
 
 #draw all stars up to frame j
 def drawStars(todate,fromdate=0):
-        inds = find((disc_dates <= todate) & (disc_dates > fromdate))
-        ps = ()
-        for j in inds:
-            p = mp.scatter(xs[j],ys[j], s=msizes[j], marker=syms[mthdind[j]], linewidths=1, edgecolors= cmap[mthdind[j]],facecolors = 'none')
-            ps += p,
-        yrtxt.set_text(u"%0.1f" %todate)
-        nstartxt.set_text(u"%0.0f" %len(find((disc_dates <= todate))))
-        return ps
-        
+    inds = np.where((disc_dates <= todate) & (disc_dates > fromdate))[0]
+    ps = ()
+    for j in inds:
+        p = mp.scatter(xs[j],ys[j], s=msizes[j], marker=syms[mthdind[j]], linewidths=1, edgecolors= cmap[mthdind[j]],facecolors = 'none')
+        ps += p,
+    yrtxt.set_text(u"%0.1f" %todate)
+    nstartxt.set_text(u"%0.0f" %len(np.where((disc_dates <= todate))[0]))
+    return ps
+    
 
 def drawStarFrames(j):
-    print j
+    print(j)
     if j == 0:
         ps = drawStars(1995,0)
     else:
-        fac = (2017+currmonth/12. - 1995)/(nframes-1)
+        fac = (float(time.strftime('%Y'))+currtoy - 1995)/(nframes-1)
         ps = drawStars(fac*j + 1995,fac*(j-1)+1995)
     return ps
 
 
 if __name__ == '__main__':
     anim = animation.FuncAnimation(fig, drawStarFrames, frames=nframes, interval=1./fps*1000, blit=False)
-    anim.save('history_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
+    Writer = animation.writers['ffmpeg']
+    writer = Writer(fps=30)
+    anim.save('history_animation.mp4', writer=writer)
 
     
