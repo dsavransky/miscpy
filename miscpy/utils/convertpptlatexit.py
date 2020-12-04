@@ -8,9 +8,9 @@ import pptx
 import re
 
 
-def natural_sort(l): 
-    convert = lambda text: int(text) if text.isdigit() else text.lower() 
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)] 
+def natural_sort(l):
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     return sorted(l, key=alphanum_key)
 
 files = glob.glob('*.pptx',recursive=True)
@@ -34,7 +34,7 @@ for f in files:
     out = []
     for j,slide in enumerate(prs.slides):
         out.append('Slide %d\n\n'%(j+1))
-        for shape in slide.shapes: 
+        for shape in slide.shapes:
             if isinstance(shape, pptx.shapes.picture.Picture):
                 tmp = str(shape.image.blob)
                 if "/Encoding /MacRomanEncoding\\n/Preamble" in tmp:
@@ -58,7 +58,7 @@ for f in files:
                             t = re.sub(key,syntax_table[key],t)
                         out.append(t)
                     out.append('\\end{align*}\n\n')
-                    
+
 
     with open(os.path.splitext(f)[0]+' eqs.tex', 'w') as fo:
         for p in pre:
