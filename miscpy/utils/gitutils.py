@@ -33,7 +33,8 @@ def makenewgit(path, gitignore=None):
     path = os.path.abspath(
         os.path.normpath(os.path.expandvars(os.path.expanduser(path)))
     )
-    os.mkdir(path)
+    if not os.path.exists(path):
+        os.mkdir(path)
 
     if gitignore is None:
         gitignore = os.path.normpath(
@@ -53,3 +54,25 @@ def makenewgit(path, gitignore=None):
         ["git", "commit", "-m 'initial commit'"], cwd=path, capture_output=True
     )
     assert res3.returncode == 0
+
+    res4 = subprocess.run(
+        [
+            "git",
+            "remote",
+            "add",
+            "origin",
+            "git@tphon.coecis.cornell.edu:/data/git/{}.git".format(
+                os.path.basename(path)
+            ),
+        ],
+        cwd=path,
+        capture_output=True,
+    )
+    assert res4.returncode == 0
+
+    res5 = subprocess.run(
+        ["git", "push", "--set-upstream", "origin", "main"],
+        cwd=path,
+        capture_output=True,
+    )
+    assert res5.returncode == 0
