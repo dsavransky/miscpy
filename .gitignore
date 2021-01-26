@@ -73,7 +73,7 @@ target/
 ## Intermediate documents:
 *.dvi
 *.xdv
-#*-converted-to.*
+*-converted-to.*
 # these rules might exclude image files for figures etc.
 # *.ps
 # *.eps
@@ -83,7 +83,7 @@ target/
 .pdf
 
 ## Bibliography auxiliary files (bibtex/biblatex/biber):
-#*.bbl
+*.bbl
 *.bcf
 *.blg
 *-blx.aux
@@ -290,6 +290,10 @@ TSWLatexianTemp*
 ./auto/*
 *.el
 
+#vim cruft
+.*.swp
+.ropeproject
+
 # expex forward references with \gathertags
 *-tags.tex
 
@@ -299,14 +303,19 @@ TSWLatexianTemp*
 # generated if using elsarticle.cls
 *.spl
 
-#various cruft
-.ipynb_checkpoints
-.*.swp
-.DS_Store
-*.m~
-*.c~
+#MATLAB cruft
+*.m~ 
+*.c~ 
 *.pro~
+
+#jupyter cruft
+.ipynb_checkpoints
+
+# mac cruft
+.DS_Store
+
+#office cruft
 ~$*.xls*
 ~$*.doc*
 ~$*.ppt*
-.ropeproject
+
