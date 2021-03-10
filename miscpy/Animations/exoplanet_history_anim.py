@@ -1,4 +1,3 @@
-import requests
 import pandas
 import numpy as np
 import matplotlib
@@ -11,57 +10,44 @@ import mpl_toolkits.axes_grid1.axes_size as Size
 from mpl_toolkits.axes_grid1 import Divider
 from mpl_toolkits.basemap import Basemap
 import time
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import BytesIO as StringIO
-import glob
 
-#from astropy.io.votable import parse
-#votable = parse('planets.votable')
-#table = votable.get_first_table()
-#data = table.array
-
-
-files = glob.glob('data*.pkl')
-if files:
-    files = np.sort(np.array(files))[-1]
-    data = pandas.read_pickle(files)
-    print("Loaded data from %s"%files)
-else:
-    query = """https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=*&format=csv"""
-    r = requests.get(query)
-    data = pandas.read_csv(StringIO(r.content))
-    data.to_pickle('data'+time.strftime('%Y%m%d')+'.pkl')
-
+from EXOSIMS.util.getExoplanetArchive import getExoplanetArchivePSCP
+data = getExoplanetArchivePSCP()
 
 #sort by discovery year
-data = data.sort_values(by=['pl_disc']).reset_index(drop=True)
+data = data.sort_values(by=['disc_year']).reset_index(drop=True)
 
 #rename methods with fewer than 30 detections
-mthds = np.unique(data['pl_discmethod'])
-for m in mthds:
-    n = data['pl_discmethod'] == m
-    if len(np.where(n)[0]) < 30:
-        data.loc[n,'pl_discmethod']  = 'Other'
+methods,methods_inds,methods_counts = np.unique(data['discoverymethod'].values,\
+                                                return_index=True,return_counts=True)
+
+othermethods = methods[methods_counts < 50]
+for m in othermethods:
+    data.loc[data['discoverymethod'] == m,'discoverymethod'] = 'Other'
+
+methods = methods[methods_counts >= 50]
+methods_counts =  methods_counts[methods_counts> 30]
+methodorder = np.argsort(methods_counts)[::-1]
+
 
 ra = data['ra'].values
 dec = data['dec'].values
-mthds = np.unique(data['pl_discmethod'])
+mthds = np.unique(data['discoverymethod'])
 #want the order to be: RV, Transit, Imag, mulens, other
-mthds = np.roll(mthds,2) 
+#mthds = np.roll(mthds,2)
+mthds = np.hstack([methods[methodorder], 'Other'])
 
-syms = 'o^Dsv';
-cmap = [[1.0000,         0,         0],
-        [0.7500,         0,    0.7500],
-        [0,         0,    1.0000],
-        [0.7500,    0.500,         0],
-        [0.2500,    0.2500,   0.2500],        
-        [0,    0.4000,    0],
-        [0,    0.4000,         0.400]]
+#syms = 'o^Dsv';
+#cmap = [[1.0000,         0,         0],
+#        [0.7500,         0,    0.7500],
+#        [0,         0,    1.0000],
+#        [0.7500,    0.500,         0],
+#        [0.2500,    0.2500,   0.2500],
+#        [0,    0.4000,    0],
+#        [0,    0.4000,         0.400]]
 
 
-def setup_fig(syms,cmap):
+def setup_fig(syms, cmap, mthds):
     #setup axes
     fignum = 1313
     xsz = 10; ysz = 6; ssz = 0.25
@@ -107,7 +93,7 @@ def setup_fig(syms,cmap):
     lg_ax.get_xaxis().set_visible(False)
     lg_ax.get_yaxis().set_visible(False)
     lg_ax.axis((0,1,0,1))
-            
+
 
     linds = ([0,1],[2,3],[4])
     lhts = ([0.75,0.25],[0.75,0.25],[0.5])
@@ -117,7 +103,7 @@ def setup_fig(syms,cmap):
            lg_ax.text(0.15+0.8/2.5*j,ht,mthds[j*2+k],fontsize=fontsize,
                       horizontalalignment='left',verticalalignment='center')
 
-           
+
     #and create the year/numstars text
     yrtxt = main_ax.text(0,0,'1900',fontsize=fontsize,
                       horizontalalignment='left',verticalalignment='bottom')
@@ -127,14 +113,17 @@ def setup_fig(syms,cmap):
 
     return fig,mp,yrtxt,nstartxt
 
-fig,mp,yrtxt,nstartxt = setup_fig(syms,cmap)
+syms = 'os^pvD<';
+cmap = ['darkgreen','red','silver','blue','gray']
 
-runtime = 30 #sec
+fig,mp,yrtxt,nstartxt = setup_fig(syms,cmap,mthds)
+
+runtime = 45 #sec
 fps = 30
 nframes = runtime*fps
 
 #generate discovery date array
-[years,inds] = np.unique(data['pl_disc'].values,return_index=True)
+[years,inds] = np.unique(data['disc_year'].values,return_index=True)
 disc_dates = np.zeros(len(dec))
 for j in np.arange(0,len(inds)-1):
     n = inds[j+1] - inds[j]
@@ -145,18 +134,19 @@ currtoy = float(time.strftime('%j'))/365.25
 disc_dates[inds[j+1]:] = years[j+1] + np.arange(0,currtoy,currtoy/disc_dates[inds[j+1]:].size)
 
 #generate all sizes
-hostnames = data['pl_hostname'].values
+hostnames = data['hostname'].values
 starnames = np.unique(hostnames)
 ssizes = np.zeros(len(starnames))+50.
 msizes = np.zeros(len(dec))
 for j in range(len(msizes)):
     ii = np.where(starnames == hostnames[j])[0]
     msizes[j] = ssizes[ii]
-    ssizes[ii] *= 2
+    #ssizes[ii] *= 2
+    ssizes[ii] *= 2-np.log2(ssizes[ii]/50.)*0.1
 
 xs,ys = mp(ra,dec)
 cmap = np.array(cmap)
-mthdind = np.array([np.where(mthds == m)[0][0] for m in data['pl_discmethod'].values])
+mthdind = np.array([np.where(mthds == m)[0][0] for m in data['discoverymethod'].values])
 syms = np.array(list(syms))
 
 #draw all stars up to frame j
@@ -169,7 +159,7 @@ def drawStars(todate,fromdate=0):
     yrtxt.set_text(u"%0.1f" %todate)
     nstartxt.set_text(u"%0.0f" %len(np.where((disc_dates <= todate))[0]))
     return ps
-    
+
 
 def drawStarFrames(j):
     print(j)
@@ -180,6 +170,68 @@ def drawStarFrames(j):
         ps = drawStars(fac*j + 1995,fac*(j-1)+1995)
     return ps
 
+def frameAudio():
+    from miscpy.utils.audio import audio
+    a = audio()
+    silence = np.zeros(int(1/fps * a.samplingFrequency))
+    freqs = np.array([a.noteFreq('C'),a.noteFreq('E'),a.noteFreq('G'),
+                     a.noteFreq('C',octave=1),a.noteFreq('E',octave=1)])
+
+    e = 0.5
+    tones = np.array([a.tone(a.noteFreq('C'),duration=1/fps,e=e),
+             a.tone(a.noteFreq('E'),duration=1/fps,e=e),
+             a.tone(a.noteFreq('G'),duration=1/fps,e=e),
+             a.tone(a.noteFreq('C',octave=1),duration=1/fps,e=e),
+             a.tone(a.noteFreq('E',octave=1),duration=1/fps,e=e)])
+
+
+    fac = (float(time.strftime('%Y'))+currtoy - 1995)/(nframes-1)
+    channels = np.zeros((nframes,len(mthds)))
+    for j in range(1,nframes):
+        todate = fac*j + 1995
+        fromdate = fac*(j-1)+1995
+        inds = np.where((disc_dates <= todate) & (disc_dates > fromdate))[0]
+        if len(inds) > 0:
+            channels[j] = np.histogram(mthdind[inds],range(len(mthds)+1))[0]
+
+    channels = channels.transpose()
+    output = np.zeros((len(mthds), runtime*a.samplingFrequency))
+    framesamps = np.ones(int(1/fps * a.samplingFrequency))
+    out = np.zeros(runtime*a.samplingFrequency)
+    for j,c in enumerate(channels):
+        o = []
+        while len(c) > 0:
+            #look for noise
+            ind = np.argmax(c > 0)
+            if ind == 0:
+                ind = len(c)
+            o.append(np.zeros(int(np.round(ind/fps * a.samplingFrequency))))
+            c = c[ind:]
+            if len(c) == 0:
+                 continue
+            #look for noise
+            ind = np.argmax(c == 0)
+            if ind == 0:
+                ind = len(c)
+            tmp = [framesamps*np.sqrt(t) for t in c[:ind]]
+            o.append(np.hstack(tmp)*a.tone(freqs[j],duration=ind/fps,e=0.2))
+            c = c[ind:]
+        out += np.hstack(o)
+    a.writeWav(out,'history_animation.wav')
+
+#    out = [silence]
+#    for j in range(1,nframes):
+#        todate = fac*j + 1995
+#        fromdate = fac*(j-1)+1995
+#        inds = np.where((disc_dates <= todate) & (disc_dates > fromdate))[0]
+#        if len(inds) == 0:
+#            out.append(silence)
+#        else:
+#            out.append(tones[mthdind[inds]].sum(0)/np.sqrt(len(inds)))
+#
+#    out = np.hstack(out)
+#    a.writeWav(out,'history_animation.wav')
+
 
 if __name__ == '__main__':
     anim = animation.FuncAnimation(fig, drawStarFrames, frames=nframes, interval=1./fps*1000, blit=False)
@@ -187,4 +239,7 @@ if __name__ == '__main__':
     writer = Writer(fps=30)
     anim.save('history_animation.mp4', writer=writer)
 
-    
+
+"""
+ffmpeg -i history_animation.mp4 -i history_animation.wav -c:v copy -map 0:v:0 -map 1:a:0 -c:a aac -b:a 192k output.mp4
+"""
