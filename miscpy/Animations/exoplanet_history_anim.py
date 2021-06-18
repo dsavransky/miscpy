@@ -169,6 +169,14 @@ disc_dates[inds[j + 1] :] = years[j + 1] + np.arange(
     0, currtoy, currtoy / disc_dates[inds[j + 1] :].size
 )
 
+#if (int(time.strftime('%Y')) == years[j+1]):
+#    #and up to today
+#    disc_dates[inds[j+1]:] = years[j+1] + np.arange(0,currtoy,currtoy/disc_dates[inds[j+1]:].size)
+#else:
+#    n = len(disc_dates) - inds[j+1]
+#    disc_dates[inds[j+1]:] = years[j+1] + np.linspace(0,1-1./n,n)
+
+
 # generate all sizes
 hostnames = data["hostname"].values
 starnames = np.unique(hostnames)
