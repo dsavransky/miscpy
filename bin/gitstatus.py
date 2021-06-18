@@ -3,7 +3,8 @@ import subprocess
 import glob
 
 basedir = os.path.join(os.environ['HOME'],'Documents')
-gitdirs = ['Proposals', 'Talks', 'Teaching', 'TeXStuff', 'MATLAB', 'Notes']
+gitdirs = ['Proposals', 'Talks', 'Teaching', 'TeXStuff', 'MATLAB', 'Notes',\
+           'BragSheets', 'Reviews']
 gitdirs = [os.path.join(basedir,d) for d in gitdirs]
 gitdirs += glob.glob(os.path.join(basedir,'gitrepos/*'))
 
