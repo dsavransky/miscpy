@@ -3,25 +3,50 @@
 import os
 import subprocess
 import glob
+import argparse
 
-basedir = os.path.join(os.environ['HOME'], 'Documents')
-gitdirs = ['Proposals', 'Talks', 'Teaching', 'TeXStuff', 'MATLAB', 'Notes',
-           'BragSheets', 'Reviews']
-gitdirs = [os.path.join(basedir, d) for d in gitdirs]
-gitdirs += glob.glob(os.path.join(basedir, 'gitrepos/*'))
 
-for d in gitdirs:
-    if "gitrepos" in d:
-        tmp = subprocess.run(["git", "remote", "-v"], cwd=d,
-                             capture_output=True).stdout.decode()
-        if "dsavransky" not in tmp:
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Check status on all git repos, fetching (or pulling) from remotes."
+    )
+    parser.add_argument(
+        "--pull",
+        action="store_true",
+        help="Do a pull (rather than default fetch on remotes)",
+    )
+    parser.add_argument(
+        "--noremote",
+        action="store_true",
+        help="Don't contact any remotes.",
+    )
+
+    args = parser.parse_args()
+
+    # define all relevant dirs
+    basedir = os.path.join(os.environ['HOME'], 'Documents')
+    gitdirs = ['Proposals', 'Talks', 'Teaching', 'TeXStuff', 'MATLAB', 'Notes',
+               'BragSheets', 'Reviews']
+    gitdirs = [os.path.join(basedir, d) for d in gitdirs]
+    gitdirs += glob.glob(os.path.join(basedir, 'gitrepos/*'))
+
+    for d in gitdirs:
+        if "gitrepos" in d:
+            tmp = subprocess.run(["git", "remote", "-v"], cwd=d,
+                                 capture_output=True).stdout.decode()
+            if "dsavransky" not in tmp:
+                continue
+        
+        if not(args.noremote):
+            if args.pull:
+                res0 = subprocess.run(["git", "pull"], cwd=d, capture_output=True)
+            else:
+                res0 = subprocess.run(["git", "fetch"], cwd=d, capture_output=True)
+        
+        res = subprocess.run(["git", "status"], cwd=d, capture_output=True).stdout.decode()
+        if ("Your branch is up to date" in res) and ("nothing to commit" in res) and\
+                ("working tree clean" in res):
             continue
-
-    res0 = subprocess.run(["git", "fetch"], cwd=d, capture_output=True)
-    res = subprocess.run(["git", "status"], cwd=d, capture_output=True).stdout.decode()
-    if ("Your branch is up to date" in res) and ("nothing to commit" in res) and\
-            ("working tree clean" in res):
-        continue
-    print("{}\n".format(d))
-    print(res)
-    print("\n")
+        print("{}\n".format(d))
+        print(res)
+        print("\n")
