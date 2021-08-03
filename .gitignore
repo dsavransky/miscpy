@@ -307,6 +307,7 @@ TSWLatexianTemp*
 *.m~ 
 *.c~ 
 *.pro~
+*.asv
 
 #jupyter cruft
 .ipynb_checkpoints
