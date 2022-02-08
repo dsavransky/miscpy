@@ -1,0 +1,5 @@
+include LICENSE README.md
+recursive-exclude tests *
+recursive-exclude Notebooks *
+recursive-exclude bin *
+exclude requirements.txt .gitignore

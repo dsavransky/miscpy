@@ -5,6 +5,11 @@ sympy helper functions
 import sympy
 from sympy import *
 
+# to be removed:
+import warnings
+from matplotlib import MatplotlibDeprecationWarning
+warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
+
 th,ph,psi,thd,phd,psid,thdd,phdd,psidd = symbols('theta,phi,psi,thetadot,phidot,psidot,thetaddot,phiddot,psiddot',real=True)
 w1,w2,w3 = symbols('omega_1,omega_2,omega_3',real=True)
 t,g,m,h = symbols('t,g,m,h',real=True)
@@ -32,7 +37,7 @@ def difftotal(expr, diffby, diffmap):
     # Do the differentiation
     diffexpr = diff(fnexpr, diffby)
     # Replace the Derivatives with the variables in diffmap
-    derivmap = {Derivative(Function(str(v))(diffby), diffby):dv 
+    derivmap = {Derivative(Function(str(v))(diffby), diffby):dv
                 for v,dv in diffmap.items()}
     finaldiff = diffexpr.subs(derivmap)
     # Replace the functional forms with their original form
@@ -47,9 +52,9 @@ def transportEq(vec, diffby, diffmap, omega):
     """Apply the transport equation to a vector:
     Frame I d/dt(vec) = Frame B d/dt(vec) + omega \cross vec
     Assumes that vector vec and angular velocity vector omega
-    are given in terms of Frame B unit vectors (in the same, 
-    right-handed order, i.e. b_1, b_2, b_3). diffby is the 
-    variable with respect to which we differentiate (typically 
+    are given in terms of Frame B unit vectors (in the same,
+    right-handed order, i.e. b_1, b_2, b_3). diffby is the
+    variable with respect to which we differentiate (typically
     time) and diffmap is a dictionary of derivatives of dependent
     variables. See difftotal for details."""
 
@@ -57,8 +62,8 @@ def transportEq(vec, diffby, diffmap, omega):
 
 
 def rotMat(axis,angle):
-    """ Returns the DCM ({}^B C^A) for a frame rotation of angle about 
-    the specified axis     
+    """ Returns the DCM ({}^B C^A) for a frame rotation of angle about
+    the specified axis
     """
     if axis == 1:
         return Matrix(([1,0,0],[0,cos(angle),sin(angle)],[0,-sin(angle),cos(angle)]))
@@ -70,12 +75,12 @@ def rotMat(axis,angle):
         return -1
 
 def parallelAxis(I_G,r_QG,m):
-    """ Applies the parallel axis theorem to matrix of inertia I_G 
+    """ Applies the parallel axis theorem to matrix of inertia I_G
     (assumed to be about the COM) to find the matrix of inertia I_Q
-    where the vector from G to Q is r_QG and the total mass of the 
-    body is m.  I_G and I_QG are assumed to be with respect to the 
+    where the vector from G to Q is r_QG and the total mass of the
+    body is m.  I_G and I_QG are assumed to be with respect to the
     same body frame."""
-    
+
     return I_G + m*((r_QG.transpose()*r_QG)[0]*eye(3) - r_QG*r_QG.transpose())
 
 def skew(v):
@@ -83,7 +88,7 @@ def skew(v):
 
     assert ((hasattr(v,'__iter__') or isinstance(v,Matrix) or isinstance(v,MatrixBase)) and len(v)==3),\
             "v must be an iterable of length 3."
-    
+
     return Matrix([
         [0,   -v[2], v[1]],
         [v[2],  0,  -v[0]],
@@ -99,13 +104,13 @@ def calcDCM(n,th):
 def DCM2angVel(dcm,diffmap):
     """ Given a direction cosine matrix (DCM) transforming from
     frame A to frame B ({}^B C^A) returns the angular velocity of
-    frame B in frame A ({}^A\omega^B). The returned vector will be 
+    frame B in frame A ({}^A\omega^B). The returned vector will be
     the components in frame B.
 
-    Assumes that differentiation is with respect to symbol t.  
+    Assumes that differentiation is with respect to symbol t.
     diffmap is defined as in difftotal
     """
-    
+
     #s = solve(dcm*difftotalmat(dcm,t,diffmap).T-skew([w1,w2,w3]),(w1,w2,w3))
     #return Matrix([s[w1],s[w2],s[w3]])
 
@@ -143,7 +148,7 @@ def fancyMat(prefix,shape):
     Example:
         fancyMat('{}^\mathcal{B}C^{\mathcal{A}}',(3,3))
     """
-    
+
     M = []
     for r in range(1,shape[0]+1):
         row = []
@@ -155,9 +160,9 @@ def fancyMat(prefix,shape):
     return M
 
 def EulerAngSet(rots, angs):
-    """ Calculate the total DCM for an Euler Angle set defined by 
+    """ Calculate the total DCM for an Euler Angle set defined by
     ordered rotations about body-fixed axes rots of angles angs.
-    
+
     Final DCM is {}^B C^A where the first rotation and angle in rots
     and angs refer to rotation starting from frame A (and the final
     entry in rots and angs is rotation into frame B).
@@ -182,11 +187,11 @@ def EulerLagrange(L, qs, diffmap):
 
     Note that qs must be iterable even if this is only a one dof system.
 
-    diffmap must map all qs to their second derivatives (via the first 
+    diffmap must map all qs to their second derivatives (via the first
     derivative).  i.e., for any q = \theta, diffmap must contain \dot\theta
     and \ddot\theta.
 
-    The returned value will be a system of equations for the second 
+    The returned value will be a system of equations for the second
     time derivatives of the generalized coordinates.
     """
 
