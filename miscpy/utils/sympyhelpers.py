@@ -159,6 +159,23 @@ def fancyMat(prefix,shape):
 
     return M
 
+def fancyVec(prefix,n):
+    """ Create an indexed column matrix akin to symarray using the prefix
+    and with dimension n
+
+    Indexing is 1-based.
+
+    Example:
+        fancyMat('a',3)
+    """
+
+    M = []
+    for r in range(1,n+1):
+        M.append(prefix+'_{'+str(r)+'}')
+    M = Matrix(symbols(M))
+
+    return M
+
 def EulerAngSet(rots, angs):
     """ Calculate the total DCM for an Euler Angle set defined by
     ordered rotations about body-fixed axes rots of angles angs.
