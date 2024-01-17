@@ -4,6 +4,7 @@ import bs4
 import pynliner
 import subprocess
 import argparse
+import os
 
 
 if __name__ == "__main__":
@@ -14,10 +15,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    texname = args.name[0]
+    texname = args.fname[0]
     namesplit = texname.split(os.extsep)
-    assert namesplit[1] == 'tex', "Input must be a .tex file"
+    assert namesplit[1] == "tex", "Input must be a .tex file"
     basename = namesplit[0]
+    htmlname = f"{basename}{os.extsep}html"
 
     _ = subprocess.run(
         ["make4ht", texname],
@@ -26,8 +28,7 @@ if __name__ == "__main__":
         capture_output=True,
     )
 
-
-    with open(f"{basename}{os.extsep}html", "r") as f:
+    with open(htmlname, "r") as f:
         soup = bs4.BeautifulSoup(f.read())
 
     stylesheets = soup.findAll("link", {"rel": "stylesheet"})
@@ -39,7 +40,7 @@ if __name__ == "__main__":
             csstxt = f.read()
 
         csstxtsan = []
-        for l in csstxt.split("\n"):
+        for l in csstxt.split("\n"): #noqa
             if "~" not in l:
                 csstxtsan.append(l)
 
@@ -48,9 +49,8 @@ if __name__ == "__main__":
         t["type"] = "text/css"
         s.replaceWith(t)
 
-
     html0 = str(soup)
     out = pynliner.fromString(html0)
 
-    with open("pubs_for_wordpress.html", "w") as f:
+    with open(htmlname, "w") as f:
         f.write(out)
