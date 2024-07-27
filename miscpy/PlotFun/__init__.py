@@ -1,4 +1,3 @@
-__all__ = ['logHist']
+__all__ = ["logHist"]
 
-from logHist import logHist
-
+from .logHist import logHist
