@@ -4,26 +4,21 @@ $
 \def\mb{\mathbb}
 \def\mc{\mathcal}
 \def\rfr{\mathcal}
-\def\grad{{\rm grad}}
-\def\Re{{\rm Re}}
-\def\Im{{\rm Im}}
 \def\und{\underline}
 \def\ovl{\overline}
 \def\unb{\underbrace}
-\def\Log{\mbox{Log}}
-\def\bfomega{\bs \omega}
-\def\bfalpha{\bs \alpha}
+\def\bfomega{\bs{\omega}}
+\def\bfalpha{\bs{\alpha}}
 \def\da{\triangleq}
 \newcommand{\leftexp}[2]{{\vphantom{#2}}^{#1}\!{#2}}
 \newcommand{\leftsub}[2]{{\vphantom{#2}}_{#1}\!{#2}}
 \newcommand{\omegarot}[2]{{\leftexp{\mathcal{#1}}{\boldsymbol{\omega}}^{\mathcal{#2}}}}
 \newcommand{\alpharot}[2]{{\leftexp{\mathcal{#1}}{\boldsymbol{\alpha}}^{\mathcal{#2}}}}
 \newcommand{\framerot}[2]{{\leftexp{\mathcal{#1}}{C}^{\mathcal{#2}}}}
+\newcommand{\dframerot}[2]{{\vphantom{C}^{\mathcal{#1}}\!{\dot C^{\mathcal{#2}}}}}
 \def\iwb{\omegarot{I}{B}}
 \def\iab{\alpharot{I}{B}}
 \def\icb{\framerot{I}{B}}
-\def\dif{\mathop{}\!\mathrm{d}}
-\newcommand{\intd}[1]{\dif#1}
 \def\dif{\mathop{}\!\mathrm{d}}
 \newcommand{\intd}[1]{\dif#1}
 \newcommand{\od}[3][]{{ \frac{\dif{^{#1}}#2}{\dif{#3^{#1}}} }}			
@@ -32,4 +27,18 @@ $
 \newcommand{\fddt}[2][]{{  \leftexp{\mathcal{#2}}{\frac{\dif{#1}}{\dif{t}}}  }}
 \newcommand{\fdddt}[2][]{{  \leftexp{\mathcal{#2}}{\frac{\dif{^{2}#1}}{\dif{t^2}}}  }}
 \newcommand{\ddt}[1][]{\fddt[#1]{I}}
+\newcommand{\bdot}[1]{{\dot{\mathbf{#1}}}}
+\newcommand{\bhat}[1]{{\hat{\mathbf{#1}}}}
+\newcommand{\bbar}[1]{{\overline{\mathbf{#1}}}}
+\def\rpo{\mf{r}_{P/O}}
+\newcommand*{\vpo}[1][I]{\leftexp{\mc{#1}}{\mf v_{P/O}}}
+\newcommand*{\apo}[1][I]{\leftexp{\mc{#1}}{\mf a_{P/O}}}
+\newcommand*{\hpo}[1][I]{\leftexp{\mc{#1}}{\mf h_{P/O}}}
+\def\rgo{\mf{r}_{G/O}}
+\newcommand*{\vgo}[1][I]{\leftexp{\mc{#1}}{\mf v_{G/O}}}
+\newcommand*{\ago}[1][I]{\leftexp{\mc{#1}}{\mf a_{G/O}}}
+\newcommand*{\hgo}[1][I]{\leftexp{\mc{#1}}{\mf h_{G/O}}}
+\newcommand*{\hg}[1][I]{\leftexp{\mc{#1}}{\mf h_{G}}}
+\newcommand*{\ho}[1][I]{\leftexp{\mc{#1}}{\mf h_{O}}}
+\newcommand*{\rprel}[1][O]{\mf{r}_{P/#1}}
 $
