@@ -11,14 +11,19 @@ def main():
     parser.add_argument(
         "texstr", nargs=1, type=str, help="LaTeX input or file (string)."
     )
+    parser.add_argument(
+        "-o", "--out", nargs=1, type=str, help="Full path to output file."
+    )
 
     args = parser.parse_args()
 
-    # if input is a file, read it in
+    # if input is a file, read it in; otherwise, assume you got a bare equation
     texstr = args.texstr[0]
     if os.path.exists(texstr):
         with open(texstr, "r") as f:
             texstr = f.read()
+    else:
+        texstr = f"\\[{texstr}\\]"
 
     # read in preamble
     preamble_path = os.path.join(
@@ -46,7 +51,14 @@ def main():
     res, err = process.communicate(input=tex.encode("utf-8"))
     assert err is None, "pandoc conversion failed."
 
-    print(res.decode("utf-8"))
+    # if output file provided, write to it, otherwise print output
+    if args.out is not None:
+        with open(args.out[0], "w") as f:
+            f.write(res.decode("utf-8"))
+    else:
+        res = res.decode("utf-8").strip()
+        res = res.strip("\\[").strip("\\]")
+        print(res)
 
 
 if __name__ == "__main__":
