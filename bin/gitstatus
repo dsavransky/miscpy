@@ -24,28 +24,47 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # define all relevant dirs
-    basedir = os.path.join(os.environ['HOME'], 'Documents')
-    gitdirs = ['Proposals', 'Talks', 'Teaching', 'TeXStuff', 'MATLAB', 'Notes',
-               'BragSheets', 'Reviews', 'Letters']
+    basedir = os.path.join(os.environ["HOME"], "Documents")
+    gitdirs = [
+        "Proposals",
+        "Talks",
+        "Teaching",
+        "TeXStuff",
+        "MATLAB",
+        "Notes",
+        "BragSheets",
+        "Reviews",
+        "Letters",
+    ]
     gitdirs = [os.path.join(basedir, d) for d in gitdirs]
-    gitdirs += glob.glob(os.path.join(basedir, 'gitrepos/*'))
+    gitdirs += glob.glob(os.path.join(basedir, "gitrepos/*"))
 
     for d in gitdirs:
         if "gitrepos" in d:
-            tmp = subprocess.run(["git", "remote", "-v"], cwd=d,
-                                 capture_output=True).stdout.decode()
-            if "dsavransky" not in tmp:
+            tmp = subprocess.run(
+                ["git", "remote", "-v"], cwd=d, capture_output=True
+            ).stdout.decode()
+            if (
+                ("dsavransky" not in tmp)
+                and ("sioslab" not in tmp)
+                and ("roman-corgi" not in tmp)
+            ):
                 continue
-        
-        if not(args.noremote):
+
+        if not (args.noremote):
             if args.pull:
                 res0 = subprocess.run(["git", "pull"], cwd=d, capture_output=True)
             else:
                 res0 = subprocess.run(["git", "fetch"], cwd=d, capture_output=True)
-        
-        res = subprocess.run(["git", "status"], cwd=d, capture_output=True).stdout.decode()
-        if ("Your branch is up to date" in res) and ("nothing to commit" in res) and\
-                ("working tree clean" in res):
+
+        res = subprocess.run(
+            ["git", "status"], cwd=d, capture_output=True
+        ).stdout.decode()
+        if (
+            ("Your branch is up to date" in res)
+            and ("nothing to commit" in res)
+            and ("working tree clean" in res)
+        ):
             continue
         print("{}\n".format(d))
         print(res)
