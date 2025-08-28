@@ -35,6 +35,7 @@ if __name__ == "__main__":
         "BragSheets",
         "Reviews",
         "Letters",
+        "FieldStuff",
     ]
     gitdirs = [os.path.join(basedir, d) for d in gitdirs]
     gitdirs += glob.glob(os.path.join(basedir, "gitrepos/*"))
